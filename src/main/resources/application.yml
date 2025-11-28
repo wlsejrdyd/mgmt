@@ -54,4 +54,4 @@ logging:
 
 tasks:
   upload:
-    project-path: /app/tasks/uploads/project
+    project-path: /app/mgmt/uploads/project
