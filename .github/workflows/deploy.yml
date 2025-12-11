@@ -1,4 +1,4 @@
-name: Deploy Mgmt
+name: Build & Deploy to K8s
 
 on:
   push:
@@ -6,19 +6,49 @@ on:
   workflow_dispatch:
 
 env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
   APP_NAME: mgmt
-  APP_PATH: /app/mgmt/mgmt
 
 jobs:
-  deploy:
+  build-deploy:
     runs-on: ubuntu-latest
-    
+    permissions:
+      contents: read
+      packages: write
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      
-      # 배포 전 백업 (롤백용)
-      - name: Pre-deploy Backup
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Build with Gradle
+        run: |
+          chmod +x gradlew
+          ./gradlew clean build -x test
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & Push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+
+      - name: Deploy to K8s
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SERVER_HOST }}
@@ -26,75 +56,23 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SERVER_PORT }}
           script: |
-            BACKUP_DIR=/app/backups/mgmt
-            mkdir -p $BACKUP_DIR
-            
-            if [ -d "${{ env.APP_PATH }}" ]; then
-              cd /app/mgmt
-              tar -czf $BACKUP_DIR/mgmt-$(date +%Y%m%d-%H%M%S).tar.gz mgmt/
-              echo "✅ Backup created"
-              
-              # 최근 5개만 유지
-              ls -t $BACKUP_DIR/mgmt-*.tar.gz 2>/dev/null | tail -n +6 | xargs -r rm -f
-              echo "🗑️ Old backups cleaned"
-            else
-              echo "⚠️ App directory not found, skipping backup"
-            fi
-      
-      # Git Pull & Build
-      - name: Deploy Application
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: ${{ secrets.SERVER_PORT }}
-          script: |
-            cd ${{ env.APP_PATH }}
-            
-            echo "📥 Pulling latest code..."
-            git fetch origin main
-            git reset --hard origin/main
-            
-            echo "🔨 Building application..."
-            if [ -f "gradlew" ]; then
-              chmod +x gradlew
-              ./gradlew build -x test --no-daemon
-            elif [ -f "pom.xml" ]; then
-              mvn clean package -DskipTests
-            elif [ -f "package.json" ]; then
-              npm ci
-              npm run build
-            fi
-            
-            echo "🔄 Restarting service..."
-            if systemctl is-active --quiet mgmt; then
-              sudo systemctl restart mgmt
-            elif [ -f "docker-compose.yml" ]; then
-              docker-compose up -d --build
-            fi
-            
-            echo "✅ Deployment completed"
-      
-      # 헬스체크
+            kubectl set image deployment/mgmt mgmt=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }} -n mgmt
+            kubectl rollout status deployment/mgmt -n mgmt --timeout=120s
+
       - name: Health Check
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: ${{ secrets.SERVER_PORT || 22 }}
+          port: ${{ secrets.SERVER_PORT }}
           script: |
-            echo "⏳ Waiting for application to start..."
-            sleep 10
+            echo "⏳ Waiting for pod to be ready..."
+            kubectl wait --for=condition=ready pod -l app=mgmt -n mgmt --timeout=120s
             
-            # 헬스체크 시도 (최대 3번)
             for i in 1 2 3; do
-              if curl -sf http://localhost:8081/actuator/health > /dev/null 2>&1; then
+              if curl -sf http://localhost:30081/actuator/health > /dev/null 2>&1; then
                 echo "✅ Health check passed"
-                exit 0
-              elif curl -sf https://mgmt.deok.kr > /dev/null 2>&1; then
-                echo "✅ Health check passed (external)"
                 exit 0
               fi
               echo "⏳ Retry $i/3..."
@@ -103,8 +81,7 @@ jobs:
             
             echo "❌ Health check failed"
             exit 1
-      
-      # 배포 실패 시 롤백
+
       - name: Rollback on Failure
         if: failure()
         uses: appleboy/ssh-action@v1.0.3
@@ -114,17 +91,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SERVER_PORT }}
           script: |
-            BACKUP_DIR=/app/backups/mgmt
-            LATEST_BACKUP=$(ls -t $BACKUP_DIR/mgmt-*.tar.gz 2>/dev/null | head -1)
-            
-            if [ -n "$LATEST_BACKUP" ]; then
-              echo "🔄 Rolling back to: $LATEST_BACKUP"
-              cd /app/mgmt
-              rm -rf mgmt
-              tar -xzf $LATEST_BACKUP
-              sudo systemctl restart mgmt
-              echo "✅ Rollback completed"
-            else
-              echo "❌ No backup found for rollback"
-              exit 1
-            fi
+            echo "🔄 Rolling back deployment..."
+            kubectl rollout undo deployment/mgmt -n mgmt
+            kubectl rollout status deployment/mgmt -n mgmt --timeout=120s
+            echo "✅ Rollback completed"
