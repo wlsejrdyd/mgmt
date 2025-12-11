@@ -31,17 +31,17 @@ spring:
     mode: HTML
     encoding: UTF-8
 
-  mail:
-    host: ${MAIL_HOST}
-    port: ${MAIL_PORT}
-    username: ${MAIL_USERNAME}
-    password: ${MAIL_PASSWORD}
-    properties:
-      mail:
-        smtp:
-          auth: true
-          starttls:
-            enable: true
+      #  mail:
+      #    host: ${MAIL_HOST}
+      #    port: ${MAIL_PORT}
+      #    username: ${MAIL_USERNAME}
+      #    password: ${MAIL_PASSWORD}
+      #    properties:
+      #      mail:
+      #        smtp:
+      #          auth: true
+      #          starttls:
+      #            enable: true
 
 logging:
   level:
@@ -55,3 +55,12 @@ logging:
 tasks:
   upload:
     project-path: ${UPLOAD_PROJECT_PATH:/app/mgmt/uploads/project}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never  # 보안상 상세정보 숨김

@@ -20,7 +20,7 @@ public class AuthController {
 
     private final UserService userService;
     private final UserRepository userRepository;
-    private final MailService mailService;
+    private final Optional<MailService> mailService;
 
     @GetMapping("/login")
     public String loginPage() {
@@ -65,7 +65,7 @@ public class AuthController {
     public String findUsername(@RequestParam String email) {
         String username = userService.findUsernameByEmail(email);
         if (username != null) {
-            mailService.sendEmail(email, "[TASKS] 아이디 찾기 결과", "회원님의 아이디는: " + username);
+	    mailService.ifPresent(ms -> ms.sendEmail(email, "[TASKS] 아이디 찾기 결과", "회원님의 아이디는: " + username));
             return "아이디가 이메일로 전송되었습니다.";
         } else {
             return "등록된 사용자를 찾을 수 없습니다.";
@@ -87,8 +87,8 @@ public class AuthController {
 
         String tempPassword = userService.generateTempPassword();
         userService.updatePassword(username, tempPassword);
-        mailService.sendEmail(email, "[TASKS] 임시 비밀번호 발급",
-                "임시 비밀번호는 다음과 같습니다:\n\n" + tempPassword + "\n\n로그인 후 꼭 비밀번호를 변경해주세요.");
+	mailService.ifPresent(ms -> ms.sendEmail(email, "[TASKS] 임시 비밀번호 발급",
+        "임시 비밀번호는 다음과 같습니다:\n\n" + tempPassword + "\n\n로그인 후 꼭 비밀번호를 변경해주세요."));
         return "임시 비밀번호가 이메일로 전송되었습니다.";
     }
 }

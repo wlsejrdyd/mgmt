@@ -1,114 +1,88 @@
-# 🛠 MGMT 프로젝트
+# ⚙️ MGMT - 통합 관리 시스템
 
-**MGMT**는 조직의 프로젝트, IP, DNS, 내부 서비스, 근태 등 자산을 통합 관리하기 위한 웹 기반 시스템입니다.  
-Spring Boot와 Gradle 기반으로 구축되었으며, 직관적인 대시보드와 관리자 기능을 제공합니다.
+> 서비스 운영을 위한 통합 관리 플랫폼
 
----
+[![Deploy](https://github.com/wlsejrdyd/mgmt/actions/workflows/deploy.yml/badge.svg)](https://github.com/wlsejrdyd/mgmt/actions/workflows/deploy.yml)
 
-## 🚀 기술 스택
+## 🌐 Live
 
-- Java 17
-- Spring Boot 3.x
-- Thymeleaf
-- Spring Security
-- MySQL (MariaDB 호환)
-- Gradle
-- HTML/CSS/JS (Vanilla + Thymeleaf)
-- [추가예정] GitHub Actions, Excel/PDF Export
+- **관리자**: https://mgmt.deok.kr
 
 ---
 
-## 📌 버전 히스토리
+## ✨ 주요 기능
 
-| 버전   | 주요 기능 |
-|--------|-----------|
-| v1.0   | 사용자 로그인 / 회원가입 / 대시보드 레이아웃 구축 |
-| v1.1   | 프로젝트 관리 기능 CRUD |
-| v1.2   | IP 관리 / DNS 도메인 관리 / 내부 서비스 관리 (전체 리셋 후 재시작) |
-| v1.3   | 사용자 인증 / 프로젝트 관리 / 대시보드 구성 완료 |
-| v1.4   | IP 대역별 카드 시각화, 수정자/수정일 자동 기록, IP 상태 요약 |
-| v1.5   | DNS 도메인 목록 도메인 기준 그룹화, `.zone` 업로드/다운로드 기능 |
-| v1.6   | ✅ DNS SSL 인증서 상태 확인 / 만료일 확인<br>✅ 도메인 수 대시보드 통계<br>✅ 호스트 클릭 시 수정 모달 |
-| v1.7   | 근태관리 기능 기획 및 상세 UI 초안 구현 (⚠ 보류됨) |
-| v1.8   | ✅ 마이페이지 구현<br>✅ 전체 페이지 공통 레이아웃/타이머/프로필 UI 통일 |
-| v1.9   | ✅ 관리자 페이지 생성 (ROLE_ADMIN 전용)<br>✅ 관리자 리소스 분리 및 접근제한 |
-| v1.10  | ✅ 근태 관리 기능 본격 도입<br>– 근태 현황 자동 계산<br>– 상세 내역 다중입력/삭제/수정<br>– 사용자 기준 통합 관리 안정화 |
-| v1.12  | ✅ 당직 근무표 기능 도입<br>– 엑셀 복사 붙여넣기 지원<br>– 주간/야간/22시 야간 근무 구분<br>– 통계 자동 계산<br>– DB 저장/불러오기 지원<br>– 빈칸 자동 처리 및 시각화 개선 |
-| **v1.13** | ✅ 당직표 UI 개선 (달력 스타일: 주말/공휴일 색상 반영)<br>✅ 통계 테이블 스타일 개선<br>✅ ADMIN 권한 사용자만 수정 가능하도록 기능 제한<br>✅ Thymeleaf 권한 체크에서 Spring Controller 기반 권한 제어로 변경 |
+### 📊 대시보드
+- 서비스 현황 모니터링
 
----
+### 👥 사용자 관리
+- 회원 목록 조회/관리
+- 권한 관리
 
-## 🔑 핵심 기능 요약
+### 📝 컨텐츠 관리
+- 게시물/영상 관리
+- 신고 처리
 
-### 사용자 인증
-- Spring Security 기반 로그인/로그아웃
-- 역할: `ROLE_USER`, `ROLE_ADMIN`
-- ✅ 자동 로그아웃 타이머
-- ✅ 관리자 전용 페이지 접근 제한
-
-### 관리자 페이지
-- `ROLE_ADMIN`만 접근 가능
-- 사용자 목록 조회 및 권한 정보 확인
-- 향후 리소스 일괄 삭제/관리 기능 확장 예정
-
-### 프로젝트 관리
-- 프로젝트 생성, 수정, 삭제
-- 진행 상태 구분 (진행중 / 완료 / 보류)
-- 엑셀 업로드 예정
-
-### IP 관리
-- CIDR 기반 IP 대역 생성
-- 중복 방지 및 수정자/수정일 자동 갱신
-- 카드 형태로 IP 조회 및 필터링
-
-### DNS 관리
-- ✅ 도메인(FQDN) 기준 그룹화
-- ✅ `.zone` 업로드 및 다운로드
-- ✅ 호스트 클릭 시 수정 팝업
-- ✅ **SSL 인증서 유효성 검사** (상태 아이콘)
-- ✅ **SSL 인증서 만료일 자동 표시**
-
-### 내부 서비스 관리
-- 일반 CRUD 방식으로 서비스 정보 관리 가능
-
-### 근태 관리 (v1.10)
-- ✅ 사용자 기준 근태 현황 자동 집계
-- ✅ 연차/대휴 일수 입력 시 요약 테이블 자동 반영
-- ✅ 다중 입력, 다중 삭제 가능
-- ✅ 선택 삭제 기능, 자동 계산 연동
-
-### 당직 근무 관리 (v1.12~v1.13)
-- ✅ 엑셀 스타일 복붙 기반 입력
-- ✅ 주간/야간/22시야간 근무 구분
-- ✅ 날짜/요일 자동 생성
-- ✅ 저장 시 `duty_cell`, `duty_record` 테이블 동시 반영
-- ✅ 누락 데이터 보완 (빈칸은 "-" 처리)
-- ✅ 통계 자동 계산 및 시각화
-- ✅ **ADMIN만 수정 가능**
-- ✅ UI 개선 (달력처럼 요일/날짜/공휴일 컬러 강조)
-
-### 대시보드
-- 프로젝트 상태 요약
-- IP 통계 카드 (대역/활성/비활성)
-- DNS 도메인 수 카드
-- ✅ 타이머 / 로그아웃 / 프로필 공통 상단 적용
+### 🔧 시스템 설정
+- 서비스 설정 관리
+- 공지사항 관리
 
 ---
 
-## 📂 데이터베이스 테이블 개요
+## 🛠️ Tech Stack
 
-- `user`, `project`, `ip_range`, `ip_address`, `dns_record`, `service_list`, `attendance_record`, `attendance_status`, `duty_cell`, `duty_record`
-- 상태 필드는 ENUM 또는 DECIMAL 기반으로 통일
-- ✅ DNS → SSL 상태 및 만료일 컬럼 포함
-- ✅ 근태 관리 → 사용자별 집계 테이블(`attendance_status`)과 상세 이력(`attendance_record`) 분리 저장
-- ✅ 당직 근무표 → 캘린더형 데이터(`duty_cell`) + 날짜형 데이터(`duty_record`) 이중 저장
+| 영역 | 기술 |
+|------|------|
+| **Backend** | Spring Boot 3.x, Spring Security, JPA |
+| **Database** | MariaDB |
+| **Frontend** | Thymeleaf, Vanilla JS |
+| **Server** | Nginx (리버스 프록시) |
+| **Infra** | Rocky Linux 9, Systemd |
+| **CI/CD** | GitHub Actions |
+| **Monitoring** | Prometheus + Grafana ([infra.deok.kr](https://infra.deok.kr)) |
 
 ---
 
-## 🧩 향후 계획 (v1.14~)
+## 📁 프로젝트 구조
 
-- ✅ 캘린더 기반 근태 등록 / 일정 기능 고도화 (모달 연동)
-- ✅ 관리자 통계 대시보드 강화
-- ✅ 폐쇄망 환경에서도 SSL 상태/만료일 확인 로직 개선
-- PDF/Excel 출력 기능 도입
-- 공통 프린트 레이아웃 정의
+```
+mgmt/
+├── src/main/java/kr/deok/mgmt/
+│   ├── config/          # Security, Web 설정
+│   ├── controller/      # API & Web 컨트롤러
+│   ├── domain/          # Entity
+│   ├── dto/             # Request/Response DTO
+│   ├── repository/      # JPA Repository
+│   └── service/         # 비즈니스 로직
+├── src/main/resources/
+│   ├── static/          # CSS, JS
+│   ├── templates/       # Thymeleaf 템플릿
+│   └── application.yml  # 설정
+└── .github/workflows/   # CI/CD
+```
+
+---
+
+## 🚀 배포
+
+### 자동 배포 (GitHub Actions)
+`main` 브랜치 push 시 자동 배포:
+1. 배포 전 자동 백업
+2. Git pull + Gradle build
+3. 서비스 재시작
+4. 헬스체크 (실패 시 자동 롤백)
+
+### 수동 배포
+```bash
+cd /app/mgmt/mgmt
+git pull origin main
+./gradlew build -x test
+sudo systemctl restart mgmt
+```
+
+---
+
+## 👤 Author
+
+- GitHub: [@wlsejrdyd](https://github.com/wlsejrdyd)
+- Email: wlsejrdyd@gmail.com
